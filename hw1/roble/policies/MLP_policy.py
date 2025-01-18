@@ -82,9 +82,9 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
 
     # query the policy with observation(s) to get selected action(s)
     def get_action(self, obs: np.ndarray) -> np.ndarray:
-        # TODO: 
+        # DONE
         ## Provide the logic to produce an action from the policy
-        pass
+        return self.forward(obs)
 
     # update/train this policy
     def update(self, observations, actions, **kwargs):
@@ -102,25 +102,13 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
             return action_distribution
         else:
             if self._deterministic:
-                ##  TODO output for a deterministic policy
-                action_distribution = TODO
+                ## DONE output for a deterministic policy
+                action_distribution = self._mean_net(observation)
             else:
                 
-                ##  TODO output for a stochastic policy
-                action_distribution = TODO
+                ## DONE output for a stochastic policy
+                action_distribution = self._std * self._mean_net(observation)
         return action_distribution
-    ##################################
-
-    def save(self, filepath):
-        torch.save(self.state_dict(), filepath)
-
-    ##################################
-
-    # update/train this policy
-    def update(self, observations, actions, **kwargs):
-        # pass
-        raise NotImplementedError
-
 #####################################################
 #####################################################
 
@@ -131,21 +119,18 @@ class MLPPolicySL(MLPPolicy):
         super().__init__(**kwargs)
         self._loss = nn.MSELoss()
 
-    def update(
-        self, observations, actions,
-        adv_n=None, acs_labels_na=None, qvals=None
-        ):
-        
-        # TODO: update the policy and return the loss
-        loss = TODO
-        return {
-            'Training Loss': ptu.to_numpy(loss),
-        }
+    def update(self, observations, actions, adv_n=None, acs_labels_na=None, qvals=None):
+        # DONE: update the policy and return the loss
+        # HINT: you need to compute the loss and update the model
+        # HINT: you need to zero the gradients of the optimizer
+        # HINT: you need to call the backward function on the loss and step the optimizer
+        actions_pred = self.get_action(observations)
+        loss = self._loss(actions_pred, actions)
+        self._optimizer.zero_grad()
+        loss.backward()
+        return {'Training Loss': ptu.to_numpy(loss), }
 
-    def update_idm(
-        self, observations, actions, next_observations,
-        adv_n=None, acs_labels_na=None, qvals=None
-        ):
+    def update_idm(self, observations, actions, next_observations,adv_n=None, acs_labels_na=None, qvals=None):
         
         
         # TODO: Create the full input to the IDM model (hint: it's not the same as the actor as it takes both obs and next_obs)
